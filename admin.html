@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>礼包码管理后台</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #1a1a2e;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            border-radius: 20px;
+            color: white;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover { background: #5a67d8; }
+        .btn-danger { background: #e53e3e; }
+        .btn-danger:hover { background: #c53030; }
+        .btn-success { background: #48bb78; }
+        .btn-success:hover { background: #38a169; }
+        .btn-sm { padding: 5px 12px; font-size: 12px; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background: #f8f9fa;
+            position: sticky;
+            top: 0;
+        }
+        .badge-used {
+            background: #e53e3e;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: inline-block;
+        }
+        .badge-unused {
+            background: #48bb78;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: inline-block;
+        }
+        .category-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: inline-block;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label { color: #666; margin-top: 5px; }
+        .row { display: flex; gap: 20px; flex-wrap: wrap; }
+        .col { flex: 1; min-width: 250px; }
+        .table-wrapper { overflow-x: auto; max-height: 500px; }
+        .folders-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+        .folder {
+            background: white;
+            border-radius: 12px;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            min-width: 120px;
+            text-align: center;
+            position: relative;
+        }
+        .folder:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .folder.active { border-color: #667eea; background: #f0f0ff; }
+        .folder-name { font-weight: bold; font-size: 16px; margin-bottom: 5px; }
+        .folder-count { font-size: 12px; color: #888; }
+        .folder-actions {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            display: flex;
+            gap: 4px;
+            background: white;
+            border-radius: 20px;
+            padding: 2px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .add-folder {
+            background: #e0e0e0;
+            color: #555;
+            border: 2px dashed #aaa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .add-folder:hover { background: #d0d0d0; }
+        .batch-bar {
+            background: #e8e8ff;
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .checkbox-col { width: 30px; }
+        .selected-count {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: white;
+        }
+        .api-config {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .api-config input {
+            flex: 2;
+            min-width: 300px;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ========== 配置 ==========
+// 请修改为你自己的 Worker 地址
+let API_BASE = "https://redeem.aqualove.top";
+
+// ========== 全局变量 ==========
+let allCodes = [];
+let categories = [];
+let currentCategory = "全部";
+let selectedCodes = new Set();
+
+// ========== 初始化 ==========
+async function init() {
+    showLoading("正在加载数据...");
+    await Promise.all([loadCodes(), loadCategories(), loadConfig()]);
+    renderAdmin();
+}
+
+async function loadCodes() {
+    const res = await fetch(API_BASE + "/api/list");
+    allCodes = await res.json();
+}
+
+async function loadCategories() {
+    const res = await fetch(API_BASE + "/api/categories");
+    categories = await res.json();
+}
+
+async function loadConfig() {
+    try {
+        const res = await fetch(API_BASE + "/api/config");
+        const config = await res.json();
+        document.getElementById("cooldownSeconds").value = config.cooldownSeconds;
+        document.getElementById("dailyLimit").value = config.dailyLimit;
+    } catch(e) {}
+}
+
+async function saveConfig() {
+    const config = {
+        cooldownSeconds: parseInt(document.getElementById("cooldownSeconds").value),
+        dailyLimit: parseInt(document.getElementById("dailyLimit").value),
+        turnstileEnabled: false
+    };
+    await fetch(API_BASE + "/api/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(config)
+    });
+    alert("配置已保存");
+}
+
+// ========== 分类管理 ==========
+async function createCategory() {
+    const name = prompt("请输入新分类名称：");
+    if (!name) return;
+    if (categories.includes(name)) {
+        alert("分类已存在");
+        return;
+    }
+    categories.push(name);
+    currentCategory = name;
+    renderAdmin();
+}
+
+async function renameCategory(oldName) {
+    if (oldName === "默认分类") {
+        alert("默认分类不能重命名");
+        return;
+    }
+    const newName = prompt("请输入新分类名称：", oldName);
+    if (!newName || newName === oldName) return;
+    
+    const res = await fetch(API_BASE + "/api/rename-category", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ oldName: oldName, newName: newName })
+    });
+    const data = await res.json();
+    if (data.success) {
+        await loadCategories();
+        if (currentCategory === oldName) currentCategory = newName;
+        await loadCodes();
+        renderAdmin();
+    }
+}
+
+async function deleteCategory(categoryName) {
+    if (categoryName === "默认分类") {
+        alert("默认分类不能删除");
+        return;
+    }
+    if (!confirm(`确定要删除分类"${categoryName}"吗？\n该分类下的所有兑换码将移至"默认分类"。`)) return;
+    
+    const res = await fetch(API_BASE + "/api/delete-category", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ categoryName: categoryName })
+    });
+    const data = await res.json();
+    alert(`已删除分类，${data.count} 个兑换码移至默认分类`);
+    await loadCategories();
+    await loadCodes();
+    if (currentCategory === categoryName) currentCategory = "默认分类";
+    renderAdmin();
+}
+
+// ========== 兑换码操作 ==========
+async function addCode() {
+    const reward = prompt("请输入奖励内容（例如：7天VIP会员）");
+    if (!reward) return;
+    const category = currentCategory === "全部" ? "默认分类" : currentCategory;
+    
+    const res = await fetch(API_BASE + "/api/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reward: reward, category: category })
+    });
+    const data = await res.json();
+    if (data.success) {
+        alert(`生成成功！兑换码：${data.code}`);
+        await loadCodes();
+        renderAdmin();
+    } else {
+        alert("生成失败：" + data.message);
+    }
+}
+
+async function batchAdd() {
+    const rewardsText = prompt("请输入奖励列表，每行一条：\n例如：\n7天VIP会员\n5000金币\n限定皮肤");
+    if (!rewardsText) return;
+    const rewards = rewardsText.split("\n").filter(r => r.trim());
+    const category = currentCategory === "全部" ? "默认分类" : currentCategory;
+    
+    const res = await fetch(API_BASE + "/api/batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rewards: rewards, category: category })
+    });
+    const data = await res.json();
+    alert(`成功生成 ${data.count} 个兑换码`);
+    await loadCodes();
+    renderAdmin();
+}
+
+async function deleteCode(code) {
+    if (!confirm(`确定删除兑换码 ${code} 吗？`)) return;
+    await fetch(API_BASE + "/api/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: code })
+    });
+    selectedCodes.delete(code);
+    await loadCodes();
+    renderAdmin();
+}
+
+async function deleteSelectedCodes() {
+    if (selectedCodes.size === 0) {
+        alert("请先选择要删除的兑换码");
+        return;
+    }
+    if (!confirm(`确定要删除 ${selectedCodes.size} 个兑换码吗？不可恢复！`)) return;
+    
+    const codes = Array.from(selectedCodes);
+    await fetch(API_BASE + "/api/batch-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codes: codes })
+    });
+    selectedCodes.clear();
+    await loadCodes();
+    renderAdmin();
+}
+
+async function moveSelectedCodes() {
+    if (selectedCodes.size === 0) {
+        alert("请先选择要移动的兑换码");
+        return;
+    }
+    const targetCategory = prompt(`移动到哪个分类？\n可选分类：${categories.join(", ")}`);
+    if (!targetCategory) return;
+    
+    const codes = Array.from(selectedCodes);
+    await fetch(API_BASE + "/api/move-codes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codes: codes, targetCategory: targetCategory })
+    });
+    selectedCodes.clear();
+    await loadCodes();
+    await loadCategories();
+    renderAdmin();
+}
+
+function selectCategory(category) {
+    currentCategory = category;
+    selectedCodes.clear();
+    renderAdmin();
+}
+
+function toggleSelectCode(code) {
+    if (selectedCodes.has(code)) {
+        selectedCodes.delete(code);
+    } else {
+        selectedCodes.add(code);
+    }
+    renderAdmin();
+}
+
+function toggleSelectAll() {
+    const filtered = getFilteredCodes();
+    const allSelected = filtered.length > 0 && filtered.every(c => selectedCodes.has(c.code));
+    if (allSelected) {
+        filtered.forEach(c => selectedCodes.delete(c.code));
+    } else {
+        filtered.forEach(c => selectedCodes.add(c.code));
+    }
+    renderAdmin();
+}
+
+function getFilteredCodes() {
+    if (currentCategory === "全部") return allCodes;
+    return allCodes.filter(c => (c.category || "默认分类") === currentCategory);
+}
+
+// ========== 导出 ==========
+function exportCodes() {
+    const filtered = getFilteredCodes();
+    let csv = "兑换码,分类,奖励,状态,使用者,使用时间\n";
+    for (const c of filtered) {
+        csv += `"${c.code}","${c.category || "默认分类"}","${c.reward}","${c.used ? "已使用" : "未使用"}","${c.usedBy || ""}","${c.usedAt || ""}"\n`;
+    }
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.setAttribute("download", "redeem_codes.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+// ========== 渲染界面 ==========
+function showLoading(msg) {
+    document.getElementById("app").innerHTML = `<div class="loading"><div style="font-size:30px;">⏳</div><div>${msg}</div></div>`;
+}
+
+function renderAdmin() {
+    const used = allCodes.filter(c => c.used).length;
+    const unused = allCodes.length - used;
+    const filtered = getFilteredCodes();
+    
+    // 分类统计
+    const categoryStats = {};
+    for (const c of allCodes) {
+        const cat = c.category || "默认分类";
+        categoryStats[cat] = (categoryStats[cat] || 0) + 1;
+    }
+    
+    // 文件夹列表
+    let foldersHtml = '<div class="folders-container">';
+    foldersHtml += `<div class="folder ${currentCategory === "全部" ? "active" : ""}" onclick="selectCategory('全部')">
+        <div class="folder-name">📁 全部</div>
+        <div class="folder-count">${allCodes.length}个 | 已用${used}</div>
+    </div>`;
+    for (const cat of categories) {
+        const count = categoryStats[cat] || 0;
+        const usedInCat = allCodes.filter(c => (c.category || "默认分类") === cat && c.used).length;
+        foldersHtml += `<div class="folder ${currentCategory === cat ? "active" : ""}" onclick="selectCategory('${cat.replace(/'/g, "\\'")}')">
+            <div class="folder-name">📂 ${cat}</div>
+            <div class="folder-count">${count}个 | 已用${usedInCat}</div>
+            <div class="folder-actions">
+                <button class="btn-sm" onclick="event.stopPropagation(); renameCategory('${cat.replace(/'/g, "\\'")}')">✏️</button>
+                ${cat !== "默认分类" ? `<button class="btn-sm btn-danger" onclick="event.stopPropagation(); deleteCategory('${cat.replace(/'/g, "\\'")}')">🗑️</button>` : ""}
+            </div>
+        </div>`;
+    }
+    foldersHtml += `<div class="folder add-folder" onclick="createCategory()">
+        <div class="folder-name">➕ 新建分类</div>
+    </div>`;
+    foldersHtml += '</div>';
+    
+    // 表格
+    let tableHtml = '<thead><tr><th class="checkbox-col"><input type="checkbox" onclick="toggleSelectAll()"' + (filtered.length > 0 && filtered.every(c => selectedCodes.has(c.code)) ? ' checked' : '') + '></th><th>兑换码</th><th>分类</th><th>奖励</th><th>状态</th><th>使用者</th><th>使用时间</th><th>操作</th></tr></thead><tbody>';
+    for (const c of filtered) {
+        const isSelected = selectedCodes.has(c.code);
+        tableHtml += `<tr>
+            <td class="checkbox-col"><input type="checkbox" ${isSelected ? 'checked' : ''} onclick="toggleSelectCode('${c.code}')"></td>
+            <td><code>${escapeHtml(c.code)}</code></td>
+            <td><span class="category-badge">${escapeHtml(c.category || "默认分类")}</span></td>
+            <td>${escapeHtml(c.reward)}</td>
+            <td><span class="badge-${c.used ? 'used' : 'unused'}">${c.used ? '已使用' : '未使用'}</span></td>
+            <td>${c.usedBy || '-'}</td>
+            <td>${c.usedAt ? new Date(c.usedAt).toLocaleString() : '-'}</td>
+            <td><button class="btn-danger btn-sm" onclick="deleteCode('${c.code}')">删除</button></td>
+        </tr>`;
+    }
+    tableHtml += '</tbody>';
+    
+    // 批量操作栏
+    let batchBar = '';
+    if (selectedCodes.size > 0) {
+        batchBar = `<div class="batch-bar">
+            <span class="selected-count">已选择 ${selectedCodes.size} 个兑换码</span>
+            <button class="btn-success btn-sm" onclick="moveSelectedCodes()">📁 移动到分类</button>
+            <button class="btn-danger btn-sm" onclick="deleteSelectedCodes()">🗑️ 批量删除</button>
+            <button class="btn-sm" onclick="selectedCodes.clear(); renderAdmin();">取消选择</button>
+        </div>`;
+    }
+    
+    const currentCategoryDisplay = currentCategory === "全部" ? "默认分类" : currentCategory;
+    
+    document.getElementById("app").innerHTML = `
+        <div class="container">
+            <div class="header">
+                <h1>🎮 礼包码管理后台</h1>
+                <p>像文件夹一样管理分类 | 点击分类切换查看 | 当前 API: ${API_BASE}</p>
+            </div>
+            
+            <div class="api-config">
+                <span>🔗 API 地址：</span>
+                <input type="text" id="apiUrl" value="${API_BASE}" placeholder="https://your-worker.workers.dev">
+                <button onclick="updateApiUrl()">切换</button>
+            </div>
+            
+            <div class="card">
+                <h2>⚙️ 兑换限制设置</h2>
+                <div class="row">
+                    <div class="col"><label>冷却时间（秒）</label><input type="number" id="cooldownSeconds" min="1" max="3600"></div>
+                    <div class="col"><label>每日上限（次/账号+IP）</label><input type="number" id="dailyLimit" min="1" max="100"></div>
+                    <div class="col"><button onclick="saveConfig()">💾 保存配置</button></div>
+                </div>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-card"><div class="stat-number">${allCodes.length}</div><div class="stat-label">总卡密</div></div>
+                <div class="stat-card"><div class="stat-number">${unused}</div><div class="stat-label">未使用</div></div>
+                <div class="stat-card"><div class="stat-number">${used}</div><div class="stat-label">已使用</div></div>
+            </div>
+            
+            <div class="card">
+                <h2>📁 分类管理（右键点击分类可重命名/删除）</h2>
+                ${foldersHtml}
+            </div>
+            
+            <div class="row">
+                <div class="col">
+                    <div class="card">
+                        <h2>➕ 生成兑换码</h2>
+                        <div class="form-group">
+                            <label>当前分类：<strong>${currentCategoryDisplay}</strong></label>
+                        </div>
+                        <button onclick="addCode()">✨ 生成单个兑换码</button>
+                        <button onclick="batchAdd()">📦 批量生成</button>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card">
+                        <h2>📥 导出数据</h2>
+                        <p>当前分类：<strong>${currentCategory === "全部" ? "全部" : currentCategory}</strong></p>
+                        <button onclick="exportCodes()">📥 导出当前分类</button>
+                    </div>
+                </div>
+            </div>
+            
+            ${batchBar}
+            
+            <div class="card">
+                <h2>📋 兑换码列表 ${currentCategory !== "全部" ? `(当前分类: ${currentCategory})` : ""}</h2>
+                <div class="table-wrapper"><table>${tableHtml}追赶</div>
+                <div style="margin-top:15px; text-align:center; font-size:12px; color:#999;">
+                    💡 提示：点击分类文件夹可筛选兑换码
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function updateApiUrl() {
+    const newUrl = document.getElementById("apiUrl").value.trim();
+    if (newUrl) {
+        API_BASE = newUrl;
+        localStorage.setItem("API_BASE", API_BASE);
+        init();
+    }
+}
+
+function escapeHtml(str) {
+    if (!str) return "";
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === "&") return "&amp;";
+        if (m === "<") return "&lt;";
+        if (m === ">") return "&gt;";
+        return m;
+    });
+}
+
+// 恢复保存的 API 地址
+const savedApi = localStorage.getItem("API_BASE");
+if (savedApi) API_BASE = savedApi;
+
+init();
+</script>
+</body>
+</html>
