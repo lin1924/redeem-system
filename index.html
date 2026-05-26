@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>礼包码兑换</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 { text-align: center; color: #333; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 30px; font-size: 14px; }
+        input {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+        input:focus { outline: none; border-color: #667eea; }
+        button {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .result { margin-top: 20px; padding: 15px; border-radius: 12px; display: none; }
+        .result.success { background: #d4edda; color: #155724; display: block; }
+        .result.error { background: #f8d7da; color: #721c24; display: block; }
+        .reward-box { margin-top: 15px; padding: 15px; background: #f0f0f0; border-radius: 12px; text-align: center; }
+        .reward-value { font-size: 20px; font-weight: bold; color: #764ba2; }
+        .cooldown-timer { text-align: center; margin-top: 15px; font-size: 14px; color: #e53e3e; }
+        .user-box {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+        .user-box input {
+            margin-top: 8px;
+            margin-bottom: 0;
+        }
+        .user-box label {
+            font-weight: bold;
+            color: #333;
+        }
+        .api-config {
+            background: #f0f0f0;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            font-size: 12px;
+        }
+        .api-config input {
+            flex: 2;
+            min-width: 200px;
+            padding: 8px;
+            margin: 0;
+        }
+        .api-config button {
+            width: auto;
+            padding: 8px 16px;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🎁 礼包码兑换</h1>
+    <div class="subtitle">输入兑换码，领取专属奖励</div>
+    
+    <div class="api-config">
+        <span>🔗 API:</span>
+        <input type="text" id="apiUrl" placeholder="Worker地址" value="https://redeem.aqualove.top">
+        <button onclick="updateApiUrl()">切换</button>
+    </div>
+    
+    <div class="user-box">
+        <label>👤 你的QQ号/昵称：</label>
+        <input type="text" id="userId" placeholder="请输入你的QQ号或群昵称" autocomplete="off">
+    </div>
+    <input type="text" id="code" placeholder="请输入兑换码" autocomplete="off">
+    <button id="redeemBtn" onclick="redeem()">立即兑换</button>
+    <div id="result" class="result"></div>
+    <div id="cooldownTimer" class="cooldown-timer"></div>
+</div>
+
+<script>
+// API 地址
+let API_BASE = "https://redeem.aqualove.top";
+
+let cooldownInterval = null;
+let isCooldown = false;
+
+function updateApiUrl() {
+    const newUrl = document.getElementById("apiUrl").value.trim();
+    if (newUrl) {
+        API_BASE = newUrl;
+        localStorage.setItem("API_BASE", API_BASE);
+        alert("API地址已切换");
+    }
+}
+
+function startCooldown(seconds) {
+    isCooldown = true;
+    const btn = document.getElementById('redeemBtn');
+    const timerDiv = document.getElementById('cooldownTimer');
+    btn.disabled = true;
+    let remaining = seconds;
+    timerDiv.innerHTML = `⏳ 请等待 ${remaining} 秒后再试...`;
+    if (cooldownInterval) clearInterval(cooldownInterval);
+    cooldownInterval = setInterval(() => {
+        remaining--;
+        if (remaining <= 0) {
+            clearInterval(cooldownInterval);
+            timerDiv.innerHTML = '';
+            btn.disabled = false;
+            isCooldown = false;
+        } else {
+            timerDiv.innerHTML = `⏳ 请等待 ${remaining} 秒后再试...`;
+        }
+    }, 1000);
+}
+
+async function redeem() {
+    if (isCooldown) { alert('请等待冷却时间结束'); return; }
+    
+    const userId = document.getElementById('userId').value.trim();
+    if (!userId) {
+        alert('请输入你的QQ号或群昵称');
+        return;
+    }
+    
+    const code = document.getElementById('code').value.trim().toUpperCase();
+    const resultDiv = document.getElementById('result');
+    if (!code) {
+        resultDiv.className = 'result error';
+        resultDiv.innerHTML = '❌ 请输入兑换码';
+        return;
+    }
+    
+    resultDiv.className = 'result';
+    resultDiv.innerHTML = '⏳ 兑换中...';
+    
+    try {
+        const response = await fetch(API_BASE + '/api/redeem', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: code, userId: userId })
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            resultDiv.className = 'result success';
+            resultDiv.innerHTML = `✅ ${data.message}<br><div class="reward-box">🎉 恭喜获得：<span class="reward-value">${data.reward}</span></div>`;
+            document.getElementById('code').value = '';
+        } else {
+            resultDiv.className = 'result error';
+            resultDiv.innerHTML = '❌ ' + data.message;
+            if (data.reason === 'cooldown' && data.remainingSeconds) {
+                startCooldown(data.remainingSeconds);
+            }
+        }
+    } catch (error) {
+        resultDiv.className = 'result error';
+        resultDiv.innerHTML = '❌ 网络错误，请检查API地址是否正确';
+    }
+}
+
+document.getElementById('code').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') redeem();
+});
+document.getElementById('userId').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') redeem();
+});
+
+// 恢复保存的 API 地址
+const savedApi = localStorage.getItem("API_BASE");
+if (savedApi) {
+    API_BASE = savedApi;
+    document.getElementById("apiUrl").value = savedApi;
+}
+</script>
+</body>
+</html>
